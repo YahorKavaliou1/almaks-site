@@ -1,0 +1,25 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> this repository.
+services:
+  - type: web
+    name: almaks-site
+    runtime: static
+    # A plain static site: nothing to build, files are served from public/.
+    buildCommand: echo "no build step"
+    staticPublishPath: ./public
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      # Photos and fonts change rarely: let browsers keep them.
+      - path: /images/*
+        name: Cache-Control
+        value: public, max-age=2592000
+      - path: /fonts/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
