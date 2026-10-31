@@ -15,12 +15,15 @@ var FORM_ENDPOINT = '';
  */
 var TURNSTILE_SITEKEY = '';
 
-/* Каталог: чтобы добавить модель, допишите объект в этот список и положите фото в images/ (w и h — размеры фото в пикселях) */
+/*
+ * Каталог: чтобы добавить модель, допишите объект в этот список и положите фото в images/.
+ * id — уникальный ключ карточки (у вариантов одной модели sku совпадает, id — нет), w и h — размеры фото в пикселях.
+ */
 var PRODUCTS = [
-  { sku: 'DY-F007', name: 'Турбо, ветрозащитная, многоразовая', spec: '68 × 25,8 × 13 мм · 50 шт. в коробке', badge: 'Хит', img: 'images/dy-f007.webp', w: 1000, h: 533 },
-  { sku: 'DY-818', name: 'Пьезо, классическая', spec: '78,4 × 22,9 × 11 мм · 50 шт. в коробке', badge: '', img: 'images/dy-818.webp', w: 1000, h: 633 },
-  { sku: 'DY-818 ALMAX', name: 'Пьезо в блистере по 5 шт.', spec: 'Наша марка · готово для полки', badge: 'ALMAX', img: 'images/dy-818-almax.webp', w: 1000, h: 671 },
-  { sku: 'DY-B010', name: 'BBQ, многоразовая', spec: 'ISO 22702 · 25 шт. в коробке', badge: '', img: 'images/dy-b010.webp', w: 1000, h: 696 }
+  { id: 'dy-f007', sku: 'DY-F007', name: 'Турбо, ветрозащитная, многоразовая', spec: '68 × 25,8 × 13 мм · 50 шт. в коробке', badge: 'Хит', img: 'images/dy-f007.webp', w: 1000, h: 533 },
+  { id: 'dy-307-solid', sku: 'DY-307', name: 'Пьезо, однотонный корпус', spec: '81,7 × 24 × 11,4 мм · 50 шт. в коробке', badge: '', img: 'images/dy-307-solid.webp', w: 1000, h: 631 },
+  { id: 'dy-307-semi', sku: 'DY-307', name: 'Пьезо, полупрозрачный корпус', spec: '81,7 × 24 × 11,4 мм · 50 шт. в коробке', badge: '', img: 'images/dy-307-semi.webp', w: 1000, h: 624 },
+  { id: 'dy-b010', sku: 'DY-B010', name: 'BBQ, многоразовая', spec: 'ISO 22702 · 25 шт. в коробке', badge: '', img: 'images/dy-b010.webp', w: 1000, h: 696 }
 ];
 
 (function () {
@@ -31,7 +34,7 @@ var PRODUCTS = [
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function bySku(sku) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].sku === sku) return PRODUCTS[i]; return null; }
+  function byId(id) { for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) return PRODUCTS[i]; return null; }
 
   /* ---------- Слайдер решений ---------- */
   var track = $('track');
@@ -80,12 +83,12 @@ var PRODUCTS = [
   goTo(0);
 
   /* ---------- Заявка (корзина) ---------- */
-  var cart = []; // [{ sku, qty }]
+  var cart = []; // [{ id, qty }]
 
-  function inCart(sku) { return cart.some(function (c) { return c.sku === sku; }); }
+  function inCart(id) { return cart.some(function (c) { return c.id === id; }); }
 
-  function toggle(sku) {
-    cart = inCart(sku) ? cart.filter(function (c) { return c.sku !== sku; }) : cart.concat([{ sku: sku, qty: '' }]);
+  function toggle(id) {
+    cart = inCart(id) ? cart.filter(function (c) { return c.id !== id; }) : cart.concat([{ id: id, qty: '' }]);
     render();
   }
 
@@ -98,7 +101,7 @@ var PRODUCTS = [
   /* ---------- Каталог ---------- */
   var grid = $('catalogGrid');
   grid.innerHTML = PRODUCTS.map(function (p) {
-    return '<button class="card" type="button" data-sku="' + esc(p.sku) + '" aria-pressed="false">' +
+    return '<button class="card" type="button" data-id="' + esc(p.id) + '" aria-pressed="false">' +
       '<span class="card__media">' +
         (p.badge ? '<span class="card__badge">' + esc(p.badge) + '</span>' : '') +
         '<span class="card__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ICON_PLUS + '"/></svg></span>' +
@@ -115,18 +118,18 @@ var PRODUCTS = [
 
   grid.addEventListener('click', function (e) {
     var card = e.target.closest('.card');
-    if (card) toggle(card.getAttribute('data-sku'));
+    if (card) toggle(card.getAttribute('data-id'));
   });
 
   function render() {
     // карточки
     var cards = grid.querySelectorAll('.card');
     for (var i = 0; i < cards.length; i++) {
-      var sku = cards[i].getAttribute('data-sku');
-      var p = bySku(sku);
-      var on = inCart(sku);
+      var id = cards[i].getAttribute('data-id');
+      var p = byId(id);
+      var on = inCart(id);
       cards[i].setAttribute('aria-pressed', on ? 'true' : 'false');
-      cards[i].setAttribute('aria-label', sku + ', ' + p.name + (on ? ' — в заявке, нажмите, чтобы убрать' : ' — нажмите, чтобы добавить в заявку'));
+      cards[i].setAttribute('aria-label', p.sku + ', ' + p.name + (on ? ' — в заявке, нажмите, чтобы убрать' : ' — нажмите, чтобы добавить в заявку'));
       cards[i].querySelector('.card__add').textContent = on ? '✓ В заявке' : '+ В заявку';
       cards[i].querySelector('.card__check path').setAttribute('d', on ? ICON_CHECK : ICON_PLUS);
     }
@@ -143,26 +146,26 @@ var PRODUCTS = [
     $('cartTable').hidden = n === 0;
     var body = $('cartBody');
     var known = {};
-    for (var r = 0; r < body.rows.length; r++) known[body.rows[r].getAttribute('data-sku')] = true;
+    for (var r = 0; r < body.rows.length; r++) known[body.rows[r].getAttribute('data-id')] = true;
     body.innerHTML = cart.map(function (c) {
-      var p = bySku(c.sku);
-      return '<tr data-sku="' + esc(c.sku) + '"' + (known[c.sku] ? '' : ' class="row-in"') + '>' +
+      var p = byId(c.id);
+      return '<tr data-id="' + esc(c.id) + '"' + (known[c.id] ? '' : ' class="row-in"') + '>' +
         '<td><span class="cart__model"><img src="' + esc(p.img) + '" alt=""><span><b>' + esc(p.sku) + '</b><small>' + esc(p.name) + '</small></span></span></td>' +
-        '<td><label><span class="sr-only">Количество ' + esc(p.sku) + '</span><input type="number" min="0" step="50" inputmode="numeric" placeholder="1000" value="' + esc(c.qty) + '"></label></td>' +
-        '<td style="text-align:center"><button type="button" class="cart__remove" aria-label="Удалить ' + esc(p.sku) + ' из заявки">×</button></td>' +
+        '<td><label><span class="sr-only">Количество ' + esc(p.sku + ', ' + p.name) + '</span><input type="number" min="0" step="50" inputmode="numeric" placeholder="1000" value="' + esc(c.qty) + '"></label></td>' +
+        '<td style="text-align:center"><button type="button" class="cart__remove" aria-label="Удалить ' + esc(p.sku + ', ' + p.name) + ' из заявки">×</button></td>' +
       '</tr>';
     }).join('');
   }
 
   $('cartBody').addEventListener('input', function (e) {
     if (e.target.tagName !== 'INPUT') return;
-    var sku = e.target.closest('tr').getAttribute('data-sku');
-    cart.forEach(function (c) { if (c.sku === sku) c.qty = e.target.value; });
+    var id = e.target.closest('tr').getAttribute('data-id');
+    cart.forEach(function (c) { if (c.id === id) c.qty = e.target.value; });
   });
   $('cartBody').addEventListener('click', function (e) {
     if (!e.target.classList.contains('cart__remove')) return;
-    var sku = e.target.closest('tr').getAttribute('data-sku');
-    cart = cart.filter(function (c) { return c.sku !== sku; });
+    var id = e.target.closest('tr').getAttribute('data-id');
+    cart = cart.filter(function (c) { return c.id !== id; });
     render();
   });
 
@@ -244,7 +247,7 @@ var PRODUCTS = [
       name: name,
       phone: phone,
       comment: field('comment').value.trim(),
-      items: cart.map(function (c) { return { sku: c.sku, name: bySku(c.sku).name, qty: c.qty }; }),
+      items: cart.map(function (c) { var p = byId(c.id); return { sku: p.sku, name: p.name, qty: c.qty }; }),
       consent: true,
       website: '',
       'cf-turnstile-response': token
